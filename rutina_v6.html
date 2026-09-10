@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Plan de Metas</title>
+<style>
+  :root{
+    --ink:#1c1a17; --paper:#faf7f2; --gold:#8a6d1f; --gold-soft:#e8dcb8;
+    --line:#d8cfae; --muted:#6b6459; --red:#a3492f;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Iowan Old Style','Georgia',serif; padding:16px 14px 50px;}
+  h1{font-size:1.4rem; font-weight:600; margin:0 0 4px;}
+  .fecha{font-size:0.83rem; color:var(--muted); margin-bottom:16px; font-style:italic;}
+  .tabs{display:flex; border-bottom:2px solid var(--line); margin-bottom:16px;}
+  .tab-btn{flex:1; background:none; border:none; padding:10px 4px; font-family:inherit; font-size:0.8rem; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px;}
+  .tab-btn.active{color:var(--gold); border-bottom:2px solid var(--gold); font-weight:600;}
+  .tab-content{display:none; border:1px solid var(--line); background:white; border-radius:3px; padding:0; overflow:hidden;}
+  .tab-content.active{display:block;}
+  .placeholder{padding:20px; text-align:center; color:var(--muted); font-size:0.9rem;}
+  .bloque-header{padding:12px 14px; border-bottom:1px solid var(--gold-soft); background:#fffdf9;}
+  .bloque-header h2{font-size:1rem; margin:0;}
+  .tarea{display:flex; align-items:flex-start; gap:10px; padding:10px 14px; border-bottom:1px solid #f0ebe0; font-size:0.9rem; cursor:pointer;}
+  .tarea:last-child{border-bottom:none;}
+  .tarea.done .txt{text-decoration:line-through; color:var(--muted);}
+  .check{width:18px; height:18px; border:1.5px solid var(--gold); border-radius:3px; flex-shrink:0; margin-top:2px; display:flex; align-items:center; justify-content:center;}
+  .tarea.done .check{background:#3f6b4a; border-color:#3f6b4a;}
+  .tarea.done .check::after{content:'✓'; color:white; font-size:12px;}
+  .txt{flex:1;}
+  .nivel-item{border-left:3px solid #d8cfae; padding:7px 0 7px 12px; margin-bottom:2px;}
+  .nivel-item.actual{border-left:3px solid #8a6d1f; background:#fdf8ec;}
+  .nivel-item b{font-size:0.88rem;}
+  .nivel-item .detalle{font-size:0.78rem; color:#6b6459; margin-top:3px; line-height:1.5;}
+  .btn-examen{background:#8a6d1f; color:white; border:none; border-radius:3px; padding:10px 16px; font-size:0.85rem; cursor:pointer; font-family:inherit; width:100%;}
+  .pregunta-card{margin-bottom:14px; padding:10px; border:1px solid #d8cfae; border-radius:3px;}
+  .pregunta-card .enunciado{font-size:0.87rem; font-weight:600; margin-bottom:6px;}
+  .pregunta-card label{display:block; font-size:0.83rem; margin-bottom:4px;}
+  .mensaje-jefe{border-left:4px solid var(--red); background:#fbecec; padding:10px 12px; margin-bottom:14px; font-size:0.87rem; font-weight:600; color:#7a2f1e; border-radius:0 3px 3px 0;}
+  .mensaje-jefe.ok{border-left:4px solid var(--gold); background:#fdf5e9; color:#6b5218;}
+  .mensaje-jefe.exito{border-left:4px solid #3f6b4a; background:#eaf3ec; color:#2a4a33;}
+</style>
+</head>
+<body>
+
+<h1>Mi Plan de Metas</h1>
+<div class="fecha" id="fecha"></div>
+<div id="mensajeJefe" class="mensaje-jefe"></div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="fisico">💪 Físico</button>
+  <button class="tab-btn" data-tab="ingles">🇬🇧 Inglés</button>
+  <button class="tab-btn" data-tab="joyeria">💍 Joyería</button>
+  <button class="tab-btn" data-tab="vida">🎯 Vida</button>
+</div>
+
+<div class="tab-content active" id="tab-fisico">
+  <div class="bloque-header"><h2>Ejercicio de hoy — casa/parque</h2></div>
+  <div id="listaFisico"></div>
+</div>
+<div class="tab-content" id="tab-ingles">
+  <div class="bloque-header"><h2 id="tituloNivelIngles">Inglés — Nivel A1</h2></div>
+  <div id="listaIngles"></div>
+  <div style="padding:14px; border-top:1px dashed #d8cfae;">
+    <div style="font-size:0.85rem; font-weight:600; color:#8a6d1f; margin-bottom:10px;">Temario completo — A1 a C2</div>
+    <div id="temarioIngles"></div>
+  </div>
+  <div style="padding:14px; border-top:1px dashed #d8cfae;">
+    <button id="btnIniciarExamen" class="btn-examen">Presentar evaluación de nivel</button>
+    <div id="examenIngles"></div>
+  </div>
+</div>
+<div class="tab-content" id="tab-joyeria">
+  <div class="bloque-header"><h2>Joyeria — operacion diaria</h2></div>
+  <div id="listaJoyeria"></div>
+</div>
+<div class="tab-content" id="tab-vida"><div class="placeholder">Aquí irá el contenido de Vida</div></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var hoy = new Date();
+  var dias = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'];
+  document.getElementById('fecha').textContent = dias[hoy.getDay()] + ', ' + hoy.getDate() + '/' + (hoy.getMonth()+1) + '/' + hoy.getFullYear();
+
+  var tareasFisico = [
+    {t:'Flexiones de pecho', s:'4 series x 8-12 reps'},
+    {t:'Sentadillas', s:'4 series x 12-15 reps'},
+    {t:'Plancha abdominal', s:'3 series x 30-45 seg'},
+    {t:'8000-10000 pasos', s:''}
+  ];
+
+  var tareasPorNivel = {
+    A1: [
+      {t:'Vocabulario nuevo', s:'10 palabras basicas, repite en voz alta'},
+      {t:'Frases simples', s:'escribe 5 frases con el vocabulario de hoy'},
+      {t:'Escuchar 10 minutos', s:'video o cancion sencilla en ingles'},
+      {t:'Repasar con Anki', s:'repite las tarjetas del dia anterior'}
+    ],
+    A2: [
+      {t:'Practicar pasado simple', s:'escribe 5 oraciones sobre lo que hiciste ayer'},
+      {t:'Vocabulario de viajes y comida', s:'10 palabras nuevas'},
+      {t:'Ver un episodio de Extra English', s:'con subtitulos en ingles'},
+      {t:'Grabarte hablando', s:'cuenta tu rutina diaria en pasado, 1 minuto'}
+    ],
+    B1: [
+      {t:'Practicar presente perfecto', s:'escribe 5 oraciones sobre experiencias (I have been to...)'},
+      {t:'Aprender 5 phrasal verbs nuevos', s:'usalos en una oracion cada uno'},
+      {t:'Escuchar BBC 6 Minute English', s:'toma notas de vocabulario nuevo'},
+      {t:'Conversacion de 10 minutos', s:'con tutor de italki o intercambio de idiomas'}
+    ],
+    B2: [
+      {t:'Practicar voz pasiva', s:'reescribe 5 oraciones en voz pasiva'},
+      {t:'Leer un articulo de noticias', s:'resumelo en tus palabras, 5 lineas'},
+      {t:'Ver un episodio sin subtitulos en espanol', s:'The Office o similar'},
+      {t:'Escribir un parrafo argumentativo', s:'100 palabras sobre un tema de tu eleccion'}
+    ],
+    C1: [
+      {t:'Ver una charla TED completa', s:'toma notas de vocabulario nuevo'},
+      {t:'Practicar registro formal', s:'reescribe un email informal en tono formal'},
+      {t:'Escuchar un acento distinto al habitual', s:'britanico, australiano, etc.'},
+      {t:'Escribir un ensayo de 150 palabras', s:'sobre un tema de actualidad'}
+    ],
+    C2: [
+      {t:'Ver una pelicula sin subtitulos', s:''},
+      {t:'Participar en un debate', s:'con hablante nativo o grupo de conversacion'},
+      {t:'Leer un articulo de The Economist', s:'resume el argumento principal'},
+      {t:'Identificar 3 expresiones idiomaticas', s:'en algo que veas o escuches hoy'}
+    ]
+  };
+
+  var tareasJoyeria = [
+    {t:'Atender pedidos y mensajes', s:'clientes del dia'},
+    {t:'Publicar 1 contenido', s:'foto de producto o detras de camaras'},
+    {t:'Responder WhatsApp/Instagram/Facebook', s:'menos de 2 horas de respuesta'},
+    {t:'Revisar ventas del dia anterior', s:'anota en tu hoja de seguimiento'}
+  ];
+
+  // nivelActual se carga mas abajo desde localStorage
+  var nivelesIngles = [
+    {n:'A1', enfoque:'Vocabulario basico, presente simple, frases cortas',
+     temas:['Verbo to be (am/is/are)', 'Pronombres personales (I, you, he...)', 'Articulos a/an/the', 'Presente simple afirmativo y negativo', 'Vocabulario: familia, numeros, colores, dias de la semana', 'Preguntas basicas (What, Where, Who)'],
+     netflix:'Series infantiles con subtitulos en ingles (Bluey, Peppa Pig)', youtube:'Simple English Videos, BBC Learning English - Basics',
+     horas:'60-100', evaluacion:'20 preguntas de gramatica basica + escribir un parrafo de 50 palabras presentandote + responder 5 preguntas orales simples. Minimo 80% para avanzar.'},
+    {n:'A2', enfoque:'Pasado simple, vocabulario cotidiano, preguntas',
+     temas:['Pasado simple (verbos regulares e irregulares)', 'Preposiciones de tiempo y lugar', 'Comparativos y superlativos', 'Vocabulario: comida, viajes, rutina diaria', 'Presente continuo vs presente simple'],
+     netflix:'Extra English (serie para estudiantes)', youtube:'English Addict with Mr Duncan, Anglo-Link',
+     horas:'100-120', evaluacion:'20 preguntas de gramatica + contar una anecdota pasada por escrito (80 palabras) + conversacion guiada de 5 min. Minimo 80% para avanzar.'},
+    {n:'B1', enfoque:'Presente perfecto, condicionales basicos, conversacion',
+     temas:['Presente perfecto (have/has + participio)', 'Primer y segundo condicional', 'Verbos modales (should, must, could)', 'Phrasal verbs comunes', 'Vocabulario: trabajo, opiniones, planes futuros'],
+     netflix:'Friends, Modern Family (subtitulos en ingles)', youtube:'English with Lucy, BBC 6 Minute English',
+     horas:'170-200', evaluacion:'25 preguntas de gramatica + ensayo de opinion (120 palabras) + conversacion de 8 min sobre un tema cotidiano. Minimo 75% para avanzar.'},
+    {n:'B2', enfoque:'Condicionales avanzados, voz pasiva, argumentacion',
+     temas:['Tercer condicional y condicionales mixtos', 'Voz pasiva en todos los tiempos', 'Reported speech (estilo indirecto)', 'Conectores de argumentacion (however, although, therefore)', 'Vocabulario: noticias, medio ambiente, tecnologia'],
+     netflix:'The Office, Stranger Things', youtube:'TED-Ed, Thoughtco English',
+     horas:'150-200', evaluacion:'Examen tipo Cambridge B2 (lectura + gramatica) + ensayo argumentativo (200 palabras) + entrevista oral de 10 min. Minimo 75% para avanzar.'},
+    {n:'C1', enfoque:'Matices, formal/informal, acentos variados',
+     temas:['Inversion enfatica (Never have I...)', 'Colocaciones avanzadas (collocations)', 'Registro formal vs informal', 'Comprension de acentos (britanico, americano, australiano)', 'Vocabulario abstracto: politica, filosofia, economia'],
+     netflix:'The Crown, Black Mirror, documentales sin doblaje', youtube:'TED Talks completas, BBC News',
+     horas:'200-250', evaluacion:'Simulacro de Cambridge CAE completo (reading, writing, listening, speaking). Minimo 70% para avanzar, idealmente con tutor certificado evaluando el speaking.'},
+    {n:'C2', enfoque:'Fluidez nativa, humor, referencias culturales',
+     temas:['Modismos e ironia', 'Humor y juegos de palabras', 'Referencias culturales e historicas', 'Debate formal y persuasion avanzada', 'Redaccion academica/profesional sin errores'],
+     netflix:'Peliculas sin subtitulos, noticieros en vivo', youtube:'The Economist, podcasts nativos',
+     horas:'250-400', evaluacion:'Simulacro de Cambridge CPE completo + debate en vivo de 15 min con hablante nativo o tutor. Este es tu examen final antes de presentar el Cambridge real.'}
+  ];
+
+  function pintarTemario(){
+    var cont = document.getElementById('temarioIngles');
+    var htmlOut = '';
+    for(var i=0; i<nivelesIngles.length; i++){
+      var niv = nivelesIngles[i];
+      var clase = (niv.n === nivelActual) ? 'nivel-item actual' : 'nivel-item';
+      htmlOut += '<div class="' + clase + '">';
+      htmlOut += '<b>' + niv.n + '</b>' + (niv.n === nivelActual ? ' <span style="font-size:0.7rem;color:#8a6d1f;">(estas aqui)</span>' : '');
+      htmlOut += '<div class="detalle">';
+      htmlOut += '<b>Enfoque:</b> ' + niv.enfoque + '<br>';
+      htmlOut += '<b>Temas a investigar:</b><ul style="margin:4px 0; padding-left:18px;">';
+      for(var ti=0; ti<niv.temas.length; ti++){ htmlOut += '<li>' + niv.temas[ti] + '</li>'; }
+      htmlOut += '</ul>';
+      htmlOut += '<b>Netflix:</b> ' + niv.netflix + '<br>';
+      htmlOut += '<b>YouTube:</b> ' + niv.youtube + '<br>';
+      htmlOut += '<b>Duracion estimada:</b> ' + niv.horas + ' horas de estudio<br>';
+      htmlOut += '<div style="margin-top:6px; padding:8px; background:#fdf8ec; border-radius:3px;"><b>Evaluacion para aprobar:</b> ' + niv.evaluacion + '</div>';
+      htmlOut += '</div>';
+      htmlOut += '</div>';
+    }
+    cont.innerHTML = htmlOut;
+  }
+
+  var bancoPreguntas = {
+    A1: [
+      {q:'I ___ happy today.', opciones:['am','is','are','be'], correcta:0},
+      {q:'He ___ my brother.', opciones:['am','is','are','be'], correcta:1},
+      {q:'We ___ friends.', opciones:['am','is','are','be'], correcta:2},
+      {q:'She ___ a doctor.', opciones:['am','is','are','be'], correcta:1},
+      {q:'You ___ very kind.', opciones:['am','is','are','be'], correcta:2},
+      {q:'It ___ a cat.', opciones:['am','is','are','be'], correcta:1},
+      {q:'They ___ from Spain.', opciones:['am','is','are','be'], correcta:2},
+      {q:'I ___ 25 years old.', opciones:['am','is','are','be'], correcta:0},
+      {q:'___ is my mother.', opciones:['He','She','It','They'], correcta:1},
+      {q:'___ is a dog.', opciones:['He','She','It','You'], correcta:2},
+      {q:'I have ___ orange.', opciones:['a','an','the','-'], correcta:1},
+      {q:'She has ___ book.', opciones:['a','an','the','-'], correcta:0},
+      {q:'___ sun is bright.', opciones:['A','An','The','-'], correcta:2},
+      {q:'I ___ not tired.', opciones:['am','is','are','do'], correcta:0},
+      {q:'She ___ not here.', opciones:['am','is','are','do'], correcta:1},
+      {q:'They ___ not ready.', opciones:['am','is','are','do'], correcta:2},
+      {q:'He ___ (work) every day.', opciones:['work','works','working','worked'], correcta:1},
+      {q:'I ___ (like) coffee.', opciones:['like','likes','liking','liked'], correcta:0},
+      {q:'She ___ tea.', opciones:['not like','doesn\'t like','don\'t like','isn\'t like'], correcta:1},
+      {q:'___ you a student?', opciones:['Am','Is','Are','Do'], correcta:2},
+      {q:'___ he your friend?', opciones:['Am','Is','Are','Do'], correcta:1},
+      {q:'How many days are in a week?', opciones:['5','6','7','8'], correcta:2},
+      {q:'What color is the sky?', opciones:['Green','Blue','Red','Yellow'], correcta:1},
+      {q:'Your mother\'s mother is your ___.', opciones:['Aunt','Sister','Grandmother','Cousin'], correcta:2},
+      {q:'What day comes after Monday?', opciones:['Sunday','Tuesday','Wednesday','Friday'], correcta:1},
+      {q:'___ is your name?', opciones:['What','Where','Who','When'], correcta:0},
+      {q:'___ do you live?', opciones:['What','Where','Who','Why'], correcta:1},
+      {q:'___ is that person?', opciones:['What','Where','Who','When'], correcta:2},
+      {q:'Opposite of "big"', opciones:['Small','Tall','Wide','Long'], correcta:0},
+      {q:'Opposite of "hot"', opciones:['Warm','Cold','Dry','Wet'], correcta:1},
+      {q:'My father\'s brother is my ___.', opciones:['Uncle','Nephew','Cousin','Brother'], correcta:0},
+      {q:'What number comes after nine?', opciones:['Eight','Nine','Ten','Eleven'], correcta:2},
+      {q:'Opposite of "up"', opciones:['Down','Left','Right','Under'], correcta:0},
+      {q:'Opposite of "fast"', opciones:['Slow','Small','Short','Weak'], correcta:0},
+      {q:'This is ___ umbrella.', opciones:['a','an','the','-'], correcta:1},
+      {q:'That is ___ car.', opciones:['a','an','the','-'], correcta:0},
+      {q:'___ classroom is big.', opciones:['A','An','The','-'], correcta:2},
+      {q:'I ___ two brothers.', opciones:['have','has','is','am'], correcta:0},
+      {q:'She ___ blue eyes.', opciones:['have','has','is','am'], correcta:1},
+      {q:'___ they hungry?', opciones:['Am','Is','Are','Do'], correcta:2},
+      {q:'___ it raining?', opciones:['Am','Is','Are','Do'], correcta:1},
+      {q:'What day comes before Sunday?', opciones:['Friday','Saturday','Monday','Thursday'], correcta:1},
+      {q:'Opposite of "young"', opciones:['Old','New','Short','Weak'], correcta:0},
+      {q:'We ___ any milk.', opciones:['don\'t have','doesn\'t have','isn\'t have','not have'], correcta:0}
+    ]
+  };
+
+  // usadasPorNivel se carga mas abajo desde localStorage
+  var preguntasExamenActual = [];
+  var respuestasExamenActual = {};
+
+  function obtenerPool(nivel){
+    var banco = bancoPreguntas[nivel] || [];
+    var usadas = usadasPorNivel[nivel] || [];
+    var disponibles = [];
+    for(var i=0; i<banco.length; i++){ if(usadas.indexOf(i) === -1) disponibles.push(i); }
+    if(disponibles.length === 0 && banco.length > 0){
+      usadasPorNivel[nivel] = [];
+      for(var j=0; j<banco.length; j++) disponibles.push(j);
+    }
+    return disponibles;
+  }
+
+  function barajar(arr){
+    var a = arr.slice();
+    for(var i=a.length-1; i>0; i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
+  function siguienteNivel(actual){
+    var orden = ['A1','A2','B1','B2','C1','C2'];
+    var idx = orden.indexOf(actual);
+    return (idx >= 0 && idx < orden.length-1) ? orden[idx+1] : null;
+  }
+
+  function iniciarExamen(){
+    var banco = bancoPreguntas[nivelActual];
+    var cont = document.getElementById('examenIngles');
+    if(!banco || banco.length === 0){
+      cont.innerHTML = '<p style="padding:10px; color:#6b6459; font-size:0.82rem;">Aun no hay banco de preguntas para este nivel. Lo agregamos cuando llegues aqui.</p>';
+      return;
+    }
+    var disponibles = obtenerPool(nivelActual);
+    var cantidad = Math.min(30, disponibles.length);
+    var elegidos = barajar(disponibles).slice(0, cantidad);
+    preguntasExamenActual = elegidos.map(function(idx){ return {idx:idx, pregunta:banco[idx]}; });
+    respuestasExamenActual = {};
+    pintarExamen();
+  }
+
+  function pintarExamen(){
+    var cont = document.getElementById('examenIngles');
+    var htmlOut = '<div style="margin-top:10px;">';
+    for(var i=0; i<preguntasExamenActual.length; i++){
+      var p = preguntasExamenActual[i].pregunta;
+      htmlOut += '<div class="pregunta-card">';
+      htmlOut += '<div class="enunciado">' + (i+1) + '. ' + p.q + '</div>';
+      for(var o=0; o<p.opciones.length; o++){
+        htmlOut += '<label><input type="radio" name="preg'+i+'" data-pregunta="'+i+'" data-opcion="'+o+'"> ' + p.opciones[o] + '</label>';
+      }
+      htmlOut += '</div>';
+    }
+    htmlOut += '<button id="btnCalificar" class="btn-examen">Calificar examen</button>';
+    htmlOut += '<div id="resultadoExamen"></div>';
+    htmlOut += '</div>';
+    cont.innerHTML = htmlOut;
+
+    var radios = cont.querySelectorAll('input[type=radio]');
+    for(var r=0; r<radios.length; r++){
+      radios[r].addEventListener('change', function(){
+        respuestasExamenActual[this.getAttribute('data-pregunta')] = parseInt(this.getAttribute('data-opcion'));
+      });
+    }
+    document.getElementById('btnCalificar').addEventListener('click', calificarExamen);
+  }
+
+  function calificarExamen(){
+    var correctas = 0;
+    var usadas = usadasPorNivel[nivelActual] || [];
+    for(var i=0; i<preguntasExamenActual.length; i++){
+      var p = preguntasExamenActual[i];
+      usadas.push(p.idx);
+      if(respuestasExamenActual[i] === p.pregunta.correcta) correctas++;
+    }
+    usadasPorNivel[nivelActual] = usadas;
+    guardarLS('usadas_preguntas', usadasPorNivel);
+    var total = preguntasExamenActual.length;
+    var pct = total ? Math.round((correctas/total)*100) : 0;
+    var aprobo = pct >= 80;
+    var siguiente = siguienteNivel(nivelActual);
+
+    var htmlR = '<div style="margin-top:10px; padding:10px; border-radius:3px; background:' + (aprobo ? '#eaf3ec' : '#fbeceb') + ';">';
+    htmlR += '<b>' + correctas + '/' + total + ' correctas (' + pct + '%)</b><br>';
+    if(aprobo){
+      htmlR += 'Aprobado. ' + (siguiente ? 'Avanzas a nivel ' + siguiente + '.' : 'Nivel maximo alcanzado.');
+    } else {
+      htmlR += 'No alcanzaste el 80% necesario. Repasa los temas y vuelve a intentar — las preguntas seran distintas mientras queden nuevas disponibles.';
+    }
+    htmlR += '</div>';
+    document.getElementById('resultadoExamen').innerHTML = htmlR;
+
+    if(aprobo && siguiente){
+      nivelActual = siguiente;
+      guardarLS('nivel_ingles', nivelActual);
+      setTimeout(function(){
+        pintarTodo();
+        document.getElementById('examenIngles').innerHTML = '';
+      }, 900);
+    }
+  }
+
+  var hoyKey = hoy.getFullYear() + '-' + (hoy.getMonth()+1) + '-' + hoy.getDate();
+
+  function guardarLS(key, valor){
+    try{ localStorage.setItem(key, JSON.stringify(valor)); }catch(e){ console.error('No se pudo guardar', e); }
+  }
+  function cargarLS(key, porDefecto){
+    try{
+      var v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : porDefecto;
+    }catch(e){ return porDefecto; }
+  }
+
+  var estado = cargarLS('estado_' + hoyKey, {});
+  var nivelActual = cargarLS('nivel_ingles', 'A1');
+  var usadasPorNivel = cargarLS('usadas_preguntas', {});
+
+  function pintarChecklist(idContenedor, listaTareas, prefijo){
+    var cont = document.getElementById(idContenedor);
+    var htmlOut = '';
+    for(var i=0; i<listaTareas.length; i++){
+      var tarea = listaTareas[i];
+      var key = prefijo + i;
+      var done = estado[key] ? 'done' : '';
+      htmlOut += '<div class="tarea ' + done + '" data-key="' + key + '">';
+      htmlOut += '<div class="check"></div>';
+      htmlOut += '<div class="txt">' + tarea.t;
+      if(tarea.s){ htmlOut += '<br><small style="color:#6b6459">' + tarea.s + '</small>'; }
+      htmlOut += '</div></div>';
+    }
+    cont.innerHTML = htmlOut;
+
+    var items = cont.querySelectorAll('.tarea');
+    for(var j=0; j<items.length; j++){
+      items[j].addEventListener('click', function(){
+        var key = this.getAttribute('data-key');
+        estado[key] = !estado[key];
+        guardarLS('estado_' + hoyKey, estado);
+        pintarTodo();
+      });
+    }
+  }
+
+  function contarPendientes(){
+    var listas = [
+      {tareas: tareasFisico, prefijo:'fisico-'},
+      {tareas: tareasPorNivel[nivelActual], prefijo:'ingles-'},
+      {tareas: tareasJoyeria, prefijo:'joyeria-'}
+    ];
+    var total=0, hechas=0;
+    for(var l=0; l<listas.length; l++){
+      for(var i=0; i<listas[l].tareas.length; i++){
+        total++;
+        if(estado[listas[l].prefijo + i]) hechas++;
+      }
+    }
+    return {total:total, hechas:hechas, pendientes: total-hechas};
+  }
+
+  var frasesJefeCero = [
+    'Aun no has hecho nada hoy. El dia no se organiza solo — muevete.',
+    'Cero tareas completadas. Tu joyeria, tu ingles y tu cuerpo estan esperando.',
+    'Empieza ya. Nadie mas va a hacer esto por ti.'
+  ];
+  var frasesJefeParcial = [
+    'Vas a la mitad. No aflojes ahora.',
+    'Bien, pero falta. Termina lo que empezaste.',
+    'Progreso real, sigue asi hasta terminar la lista.'
+  ];
+  var frasesJefeCompleto = [
+    'Todo listo por hoy. Buen trabajo — descansa, te lo ganaste.',
+    'Dia cumplido. Asi se construye el progreso, un dia a la vez.',
+    'Cero pendientes. Manana seguimos con la misma disciplina.'
+  ];
+
+  function pintarMensajeJefe(){
+    var c = contarPendientes();
+    var cont = document.getElementById('mensajeJefe');
+    var frase, clase;
+    if(c.hechas === 0){
+      frase = frasesJefeCero[Math.floor(Math.random()*frasesJefeCero.length)];
+      clase = '';
+    } else if(c.pendientes === 0){
+      frase = frasesJefeCompleto[Math.floor(Math.random()*frasesJefeCompleto.length)];
+      clase = 'exito';
+    } else {
+      frase = frasesJefeParcial[Math.floor(Math.random()*frasesJefeParcial.length)];
+      clase = 'ok';
+    }
+    cont.className = 'mensaje-jefe' + (clase ? ' ' + clase : '');
+    cont.innerHTML = '<b>Tu jefe dice:</b> ' + frase + ' (' + c.hechas + '/' + c.total + ' tareas hoy)';
+  }
+
+  function pintarTodo(){
+    document.getElementById('tituloNivelIngles').textContent = 'Inglés — Nivel ' + nivelActual;
+    pintarChecklist('listaFisico', tareasFisico, 'fisico-');
+    pintarChecklist('listaIngles', tareasPorNivel[nivelActual], 'ingles-');
+    pintarChecklist('listaJoyeria', tareasJoyeria, 'joyeria-');
+    pintarTemario();
+    pintarMensajeJefe();
+  }
+  pintarTodo();
+
+  document.getElementById('btnIniciarExamen').addEventListener('click', iniciarExamen);
+
+  var botones = document.querySelectorAll('.tab-btn');
+  for(var k=0; k<botones.length; k++){
+    botones[k].addEventListener('click', function(){
+      var todos = document.querySelectorAll('.tab-btn');
+      for(var m=0; m<todos.length; m++){ todos[m].classList.remove('active'); }
+      var contenidos = document.querySelectorAll('.tab-content');
+      for(var n=0; n<contenidos.length; n++){ contenidos[n].classList.remove('active'); }
+      this.classList.add('active');
+      document.getElementById('tab-' + this.getAttribute('data-tab')).classList.add('active');
+    });
+  }
+});
+</script>
+
+</body>
+</html>
