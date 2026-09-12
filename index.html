@@ -235,11 +235,10 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 
   function progresoEnContra(){
-    if(medidasHistorial.length < 2 || !perfilFisico) return false;
-    var primero = medidasHistorial[0];
+    if(medidasHistorial.length < 1 || !perfilFisico || !perfilFisico.peso) return false;
     var ultimo = medidasHistorial[medidasHistorial.length-1];
-    if(!primero.peso || !ultimo.peso) return false;
-    var cambio = ultimo.peso - primero.peso;
+    if(!ultimo.peso) return false;
+    var cambio = ultimo.peso - perfilFisico.peso;
     if(perfilFisico.objetivo === 'Perdida de peso' && cambio > 1) return true;
     if(perfilFisico.objetivo === 'Aumento de masa muscular' && cambio < -1) return true;
     return false;
@@ -629,13 +628,29 @@ document.addEventListener('DOMContentLoaded', function(){
     return null;
   }
 
+  function obtenerBaseInicial(){
+    if(!perfilFisico) return null;
+    return {
+      fecha: 'inicial',
+      peso: perfilFisico.peso || null,
+      cintura: perfilFisico.cinturaInicial || null,
+      cadera: perfilFisico.caderaInicial || null,
+      pecho: perfilFisico.pechoInicial || null,
+      brazo: perfilFisico.brazoInicial || null,
+      pierna: perfilFisico.piernaInicial || null
+    };
+  }
+
   function pintarMedidas(){
     var cont = document.getElementById('medidasFisico');
     var ultimo = medidasHistorial.length ? medidasHistorial[medidasHistorial.length-1] : null;
-    var primero = medidasHistorial.length ? medidasHistorial[0] : null;
+    var base = obtenerBaseInicial();
 
     var htmlOut = '<div class="medidas-panel">';
     htmlOut += '<div class="titulo-med">Toma de medidas de hoy</div>';
+    if(base && base.peso){
+      htmlOut += '<div style="font-size:0.76rem; color:var(--muted); margin-bottom:8px;">Punto de partida: Peso ' + (base.peso||'—') + ' kg · Cintura ' + (base.cintura||'—') + ' cm · Cadera ' + (base.cadera||'—') + ' cm · Pecho ' + (base.pecho||'—') + ' cm · Brazo ' + (base.brazo||'—') + ' cm · Pierna ' + (base.pierna||'—') + ' cm</div>';
+    }
     htmlOut += '<div class="grid3">';
     htmlOut += '<div class="campo"><label>Peso (kg)</label><input type="number" step="0.1" id="mPeso"></div>';
     htmlOut += '<div class="campo"><label>Cintura (cm)</label><input type="number" step="0.1" id="mCintura"></div>';
@@ -651,17 +666,31 @@ document.addEventListener('DOMContentLoaded', function(){
     if(ultimo){
       htmlOut += '<div class="medidas-ultimo"><b>Ultimo registro (' + ultimo.fecha + '):</b> ';
       htmlOut += 'Peso ' + (ultimo.peso||'—') + ' kg · Cintura ' + (ultimo.cintura||'—') + ' cm · Cadera ' + (ultimo.cadera||'—') + ' cm · Pecho ' + (ultimo.pecho||'—') + ' cm · Brazo ' + (ultimo.brazo||'—') + ' cm · Pierna ' + (ultimo.pierna||'—') + ' cm';
-      if(primero && primero !== ultimo && primero.peso && ultimo.peso){
-        var cambioPeso = ultimo.peso - primero.peso;
+      if(base && base.peso && ultimo.peso){
+        var cambioPeso = ultimo.peso - base.peso;
         var direccion = cambioPeso > 0 ? 'subiste' : (cambioPeso < 0 ? 'bajaste' : 'te mantuviste');
-        htmlOut += '<br><b>Desde tu primer registro:</b> ' + direccion + ' ' + Math.abs(cambioPeso).toFixed(1) + ' kg';
-        if(primero.cintura && ultimo.cintura){
-          var cambioCintura = ultimo.cintura - primero.cintura;
+        htmlOut += '<br><b>Desde tu medida inicial:</b> ' + direccion + ' ' + Math.abs(cambioPeso).toFixed(1) + ' kg';
+        if(base.cintura && ultimo.cintura){
+          var cambioCintura = ultimo.cintura - base.cintura;
           var direccionCintura = cambioCintura > 0 ? 'aumento' : (cambioCintura < 0 ? 'reduccion' : 'sin cambio');
           htmlOut += ' · Cintura: ' + direccionCintura + ' de ' + Math.abs(cambioCintura).toFixed(1) + ' cm';
         }
+        if(base.cadera && ultimo.cadera){
+          var cambioCadera = ultimo.cadera - base.cadera;
+          htmlOut += ' · Cadera: ' + (cambioCadera > 0 ? 'aumento' : cambioCadera < 0 ? 'reduccion' : 'sin cambio') + ' de ' + Math.abs(cambioCadera).toFixed(1) + ' cm';
+        }
+        if(base.brazo && ultimo.brazo){
+          var cambioBrazo = ultimo.brazo - base.brazo;
+          htmlOut += ' · Brazo: ' + (cambioBrazo > 0 ? 'aumento' : cambioBrazo < 0 ? 'reduccion' : 'sin cambio') + ' de ' + Math.abs(cambioBrazo).toFixed(1) + ' cm';
+        }
+        if(base.pierna && ultimo.pierna){
+          var cambioPierna = ultimo.pierna - base.pierna;
+          htmlOut += ' · Pierna: ' + (cambioPierna > 0 ? 'aumento' : cambioPierna < 0 ? 'reduccion' : 'sin cambio') + ' de ' + Math.abs(cambioPierna).toFixed(1) + ' cm';
+        }
         var evaluacion = evaluarProgresoVsObjetivo(cambioPeso, perfilFisico ? perfilFisico.objetivo : null);
         if(evaluacion) htmlOut += '<div style="margin-top:6px; padding:8px; border-radius:3px; background:' + evaluacion.color + ';">' + evaluacion.mensaje + '</div>';
+      } else if(!base || !base.peso){
+        htmlOut += '<br><span style="color:var(--muted); font-size:0.76rem;">Completa tus "medidas iniciales" en el formulario de perfil para ver comparaciones de progreso.</span>';
       }
       htmlOut += '</div>';
     }
@@ -839,11 +868,21 @@ document.addEventListener('DOMContentLoaded', function(){
       htmlOut += '<div class="campo"><label>Nombre</label><input type="text" id="fNombre" value="'+(d.nombre||'')+'"></div>';
       htmlOut += '<div class="fila2">';
       htmlOut += '<div class="campo"><label>Edad</label><input type="number" id="fEdad" value="'+(d.edad||'')+'"></div>';
-      htmlOut += '<div class="campo"><label>Peso actual (kg)</label><input type="number" step="0.1" id="fPeso" value="'+(d.peso||'')+'"></div>';
+      htmlOut += '<div class="campo"><label>Peso inicial (kg)</label><input type="number" step="0.1" id="fPeso" value="'+(d.peso||'')+'"></div>';
       htmlOut += '</div>';
       htmlOut += '<div class="fila2">';
       htmlOut += '<div class="campo"><label>Estatura (cm)</label><input type="number" id="fEstatura" value="'+(d.estatura||'')+'"></div>';
       htmlOut += '<div class="campo"><label>Tiempo estimado</label><input type="text" id="fTiempo" placeholder="Ej: 7 semanas" value="'+(d.tiempo||'')+'"></div>';
+      htmlOut += '</div>';
+      htmlOut += '<div class="panel-title" style="margin-top:6px;">Medidas iniciales (punto de partida — se comparan con cada "medida de hoy" que registres despues)</div>';
+      htmlOut += '<div class="grid3">';
+      htmlOut += '<div class="campo"><label>Cintura inicial (cm)</label><input type="number" step="0.1" id="fCinturaInicial" value="'+(d.cinturaInicial||'')+'"></div>';
+      htmlOut += '<div class="campo"><label>Cadera inicial (cm)</label><input type="number" step="0.1" id="fCaderaInicial" value="'+(d.caderaInicial||'')+'"></div>';
+      htmlOut += '<div class="campo"><label>Pecho inicial (cm)</label><input type="number" step="0.1" id="fPechoInicial" value="'+(d.pechoInicial||'')+'"></div>';
+      htmlOut += '</div>';
+      htmlOut += '<div class="grid3">';
+      htmlOut += '<div class="campo"><label>Brazo inicial (cm)</label><input type="number" step="0.1" id="fBrazoInicial" value="'+(d.brazoInicial||'')+'"></div>';
+      htmlOut += '<div class="campo"><label>Pierna inicial (cm)</label><input type="number" step="0.1" id="fPiernaInicial" value="'+(d.piernaInicial||'')+'"></div>';
       htmlOut += '</div>';
       htmlOut += '<div class="campo"><label>Objetivo</label><select id="fObjetivo">';
       var objetivos = ['Perdida de peso','Aumento de masa muscular','Mantenimiento / tonificacion','Mejorar resistencia cardiovascular','Aumentar fuerza','Flexibilidad / movilidad','Recuperacion de una lesion'];
@@ -890,6 +929,11 @@ document.addEventListener('DOMContentLoaded', function(){
           edad: document.getElementById('fEdad').value,
           peso: nuevoPeso,
           estatura: nuevaEstatura,
+          cinturaInicial: parseFloat(document.getElementById('fCinturaInicial').value) || null,
+          caderaInicial: parseFloat(document.getElementById('fCaderaInicial').value) || null,
+          pechoInicial: parseFloat(document.getElementById('fPechoInicial').value) || null,
+          brazoInicial: parseFloat(document.getElementById('fBrazoInicial').value) || null,
+          piernaInicial: parseFloat(document.getElementById('fPiernaInicial').value) || null,
           objetivo: document.getElementById('fObjetivo').value,
           morfologia: document.getElementById('fMorfologia').value,
           sexo: document.getElementById('fSexo').value,
