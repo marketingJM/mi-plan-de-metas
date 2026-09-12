@@ -39,6 +39,27 @@
   .mensaje-jefe{border-left:4px solid var(--red); background:#fbecec; padding:10px 12px; margin-bottom:14px; font-size:0.87rem; font-weight:600; color:#7a2f1e; border-radius:0 3px 3px 0;}
   .mensaje-jefe.ok{border-left:4px solid var(--gold); background:#fdf5e9; color:#6b5218;}
   .mensaje-jefe.exito{border-left:4px solid #3f6b4a; background:#eaf3ec; color:#2a4a33;}
+  .form-intro{padding:14px; border-bottom:1px dashed var(--line);}
+  .form-intro .campo{margin-bottom:10px;}
+  .form-intro label{font-size:0.75rem; color:var(--muted); display:block; margin-bottom:3px;}
+  .form-intro input, .form-intro select{width:100%; border:1px solid var(--line); border-radius:3px; padding:8px 9px; font-size:0.87rem; font-family:inherit;}
+  .form-intro .fila2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .btn-guardar-intro{background:var(--gold); color:white; border:none; border-radius:3px; padding:10px 16px; font-size:0.85rem; cursor:pointer; font-family:inherit; width:100%; margin-top:4px;}
+  .resumen-fisico{padding:14px; border-bottom:1px dashed var(--line); font-size:0.85rem; line-height:1.6;}
+  .resumen-fisico b{color:var(--gold);}
+  .link-editar{background:none; border:none; color:var(--muted); font-size:0.76rem; text-decoration:underline; cursor:pointer; font-family:inherit; padding:0; margin-top:4px;}
+  .panel-especialista{margin-top:10px; border:1px solid var(--line); border-radius:3px; overflow:hidden;}
+  .panel-especialista .titulo-esp{background:#fffdf9; padding:8px 10px; font-size:0.82rem; font-weight:600; color:var(--gold); border-bottom:1px solid var(--gold-soft);}
+  .panel-especialista .cuerpo-esp{padding:10px; font-size:0.8rem; line-height:1.6;}
+  .panel-especialista ul{margin:4px 0; padding-left:18px;}
+  .macro-tabla{width:100%; border-collapse:collapse; margin-top:6px; font-size:0.78rem;}
+  .macro-tabla td{padding:4px 6px; border-bottom:1px solid #f0ebe0;}
+  .medidas-panel{padding:14px; border-bottom:1px dashed var(--line);}
+  .medidas-panel .titulo-med{font-size:0.85rem; font-weight:600; color:var(--gold); margin-bottom:8px;}
+  .medidas-panel .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:8px;}
+  .medidas-panel .campo label{font-size:0.7rem; color:var(--muted); display:block; margin-bottom:3px;}
+  .medidas-panel .campo input{width:100%; border:1px solid var(--line); border-radius:3px; padding:7px 8px; font-size:0.83rem; font-family:inherit;}
+  .medidas-ultimo{font-size:0.76rem; color:var(--muted); margin-top:6px; line-height:1.5;}
 </style>
 </head>
 <body>
@@ -55,7 +76,9 @@
 </div>
 
 <div class="tab-content active" id="tab-fisico">
-  <div class="bloque-header"><h2>Ejercicio de hoy — casa/parque</h2></div>
+  <div id="introFisico"></div>
+  <div id="medidasFisico"></div>
+  <div class="bloque-header"><h2 id="tituloFisicoHoy">Ejercicio de hoy — casa/parque</h2></div>
   <div id="listaFisico"></div>
 </div>
 <div class="tab-content" id="tab-ingles">
@@ -82,12 +105,162 @@ document.addEventListener('DOMContentLoaded', function(){
   var dias = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'];
   document.getElementById('fecha').textContent = dias[hoy.getDay()] + ', ' + hoy.getDate() + '/' + (hoy.getMonth()+1) + '/' + hoy.getFullYear();
 
-  var tareasFisico = [
-    {t:'Flexiones de pecho', s:'4 series x 8-12 reps'},
-    {t:'Sentadillas', s:'4 series x 12-15 reps'},
-    {t:'Plancha abdominal', s:'3 series x 30-45 seg'},
-    {t:'8000-10000 pasos', s:''}
-  ];
+  var tiposDia = {
+    fuerza_fullbody: {
+      normal:[
+        {t:'Flexiones de pecho', s:'4 series x 8-12 reps'},
+        {t:'Sentadillas', s:'4 series x 12-15 reps'},
+        {t:'Plancha abdominal', s:'3 series x 30-45 seg'},
+        {t:'Remo con banda o mochila con peso', s:'3 series x 10-12 reps'}
+      ],
+      bajo:[
+        {t:'Flexiones inclinadas (manos en superficie elevada)', s:'3 series x 8-10 reps, menor carga en muñecas/hombros'},
+        {t:'Sentadilla asistida en silla (sentarse y levantarse)', s:'3 series x 10-12 reps, cuida rodillas'},
+        {t:'Plancha con apoyo de rodillas', s:'3 series x 20-30 seg'},
+        {t:'Remo con banda sentado', s:'3 series x 10-12 reps'}
+      ]
+    },
+    fuerza_superior: {
+      normal:[
+        {t:'Flexiones de pecho', s:'4 series x 8-12 reps'},
+        {t:'Fondos de triceps en banca de parque', s:'3 series x 10-12 reps'},
+        {t:'Remo con banda o mochila con peso', s:'3 series x 10-12 reps'},
+        {t:'Plancha abdominal', s:'3 series x 30-45 seg'}
+      ],
+      bajo:[
+        {t:'Flexiones inclinadas (manos en superficie elevada)', s:'3 series x 8-10 reps'},
+        {t:'Extension de triceps con banda (sentado)', s:'3 series x 10-12 reps'},
+        {t:'Remo con banda sentado', s:'3 series x 10-12 reps'},
+        {t:'Plancha con apoyo de rodillas', s:'3 series x 20-30 seg'}
+      ]
+    },
+    fuerza_inferior: {
+      normal:[
+        {t:'Sentadillas', s:'4 series x 12-15 reps'},
+        {t:'Zancadas alternadas', s:'3 series x 10 reps por pierna'},
+        {t:'Puente de gluteo', s:'3 series x 15 reps'},
+        {t:'Sentadilla isometrica en pared', s:'3 series x 30-40 seg'}
+      ],
+      bajo:[
+        {t:'Sentadilla asistida en silla', s:'3 series x 10-12 reps, cuida rodillas'},
+        {t:'Elevacion de talones sentado', s:'3 series x 15 reps'},
+        {t:'Puente de gluteo', s:'3 series x 12-15 reps, sin forzar lumbar'},
+        {t:'Sentadilla isometrica en pared (rango corto)', s:'3 series x 20-30 seg'}
+      ]
+    },
+    cardio: {
+      normal:[
+        {t:'Trote o caminata rapida', s:'20-25 min continuos'},
+        {t:'Sprints cortos', s:'6-8 series x 20 seg, descanso 40 seg'},
+        {t:'Caminata de enfriamiento', s:'5 min'}
+      ],
+      bajo:[
+        {t:'Caminata rapida (plano o subida suave)', s:'25-30 min continuos'},
+        {t:'Step-ups controlados en escalon bajo', s:'4 series x 10 reps'},
+        {t:'Caminata de enfriamiento', s:'5 min'}
+      ]
+    },
+    cardio_largo: {
+      normal:[
+        {t:'Caminata larga o trote suave', s:'35-45 min, ritmo conversacional'},
+        {t:'Estiramiento final', s:'10 min'}
+      ],
+      bajo:[
+        {t:'Caminata larga a ritmo comodo', s:'35-45 min, sin trotar'},
+        {t:'Estiramiento final', s:'10 min'}
+      ]
+    },
+    movilidad: {normal:[
+      {t:'Estiramiento general', s:'10-15 min, todo el cuerpo'},
+      {t:'Movilidad articular (hombros, cadera, tobillos)', s:'10 min'}
+    ]},
+    descanso_activo: {normal:[
+      {t:'Caminata suave', s:'20-30 min, ritmo relajado'}
+    ]},
+    descanso: {normal:[
+      {t:'Descanso', s:'Sin ejercicio estructurado, estiramiento opcional'}
+    ]},
+    rehab: {normal:[
+      {t:'Movilidad suave sin dolor', s:'10 min, rango de movimiento controlado'},
+      {t:'Ejercicios de estabilidad segun tu fisioterapeuta', s:''},
+      {t:'Caminata corta si esta autorizada', s:'10-15 min'}
+    ]}
+  };
+
+  var plantillasSemana = {
+    'Perdida de peso': ['descanso','fuerza_fullbody','cardio','fuerza_fullbody','cardio','fuerza_fullbody','cardio_largo'],
+    'Aumento de masa muscular': ['descanso','fuerza_superior','fuerza_inferior','descanso_activo','fuerza_superior','fuerza_inferior','fuerza_fullbody'],
+    'Mantenimiento / tonificacion': ['descanso','fuerza_fullbody','cardio','movilidad','fuerza_fullbody','cardio','descanso_activo'],
+    'Mejorar resistencia cardiovascular': ['descanso','cardio','fuerza_inferior','cardio','cardio_largo','fuerza_superior','cardio'],
+    'Aumentar fuerza': ['descanso','fuerza_superior','fuerza_inferior','descanso','fuerza_fullbody','descanso_activo','fuerza_superior'],
+    'Flexibilidad / movilidad': ['descanso','movilidad','movilidad','descanso_activo','movilidad','movilidad','descanso_activo'],
+    'Recuperacion de una lesion': ['descanso','rehab','rehab','descanso','rehab','rehab','descanso']
+  };
+
+  var nombresTiposDia = {
+    fuerza_fullbody:'Fuerza full body', fuerza_superior:'Fuerza tren superior', fuerza_inferior:'Fuerza tren inferior',
+    cardio:'Cardio', cardio_largo:'Cardio largo', movilidad:'Movilidad y estiramiento',
+    descanso_activo:'Descanso activo', descanso:'Descanso', rehab:'Recuperacion / rehabilitacion'
+  };
+
+  var restDayPatterns = {3:[0,2,4,6], 4:[0,3,5], 5:[0,3], 6:[0]};
+
+  function obtenerTiposEntrenoObjetivo(objetivo){
+    var base = plantillasSemana[objetivo] || plantillasSemana['Mantenimiento / tonificacion'];
+    var tipos = [];
+    for(var i=0; i<base.length; i++){
+      if(base[i] !== 'descanso' && tipos.indexOf(base[i]) === -1) tipos.push(base[i]);
+    }
+    if(tipos.length === 0) tipos = ['fuerza_fullbody'];
+    return tipos;
+  }
+
+  function generarPlantillaSemanaDinamica(objetivo, dias){
+    var diasNum = dias || 4;
+    var restDays = restDayPatterns[diasNum] || restDayPatterns[4];
+    var tiposEntreno = obtenerTiposEntrenoObjetivo(objetivo);
+    var plantilla = [];
+    var ti = 0;
+    for(var d=0; d<7; d++){
+      if(restDays.indexOf(d) !== -1){ plantilla.push('descanso'); }
+      else { plantilla.push(tiposEntreno[ti % tiposEntreno.length]); ti++; }
+    }
+    return plantilla;
+  }
+
+  function nombreTipoDiaHoy(){
+    var objetivo = (perfilFisico && perfilFisico.objetivo) ? perfilFisico.objetivo : 'Mantenimiento / tonificacion';
+    var plantilla = generarPlantillaSemanaDinamica(objetivo, perfilFisico && perfilFisico.dias);
+    return nombresTiposDia[plantilla[hoy.getDay()]];
+  }
+
+  function progresoEnContra(){
+    if(medidasHistorial.length < 2 || !perfilFisico) return false;
+    var primero = medidasHistorial[0];
+    var ultimo = medidasHistorial[medidasHistorial.length-1];
+    if(!primero.peso || !ultimo.peso) return false;
+    var cambio = ultimo.peso - primero.peso;
+    if(perfilFisico.objetivo === 'Perdida de peso' && cambio > 1) return true;
+    if(perfilFisico.objetivo === 'Aumento de masa muscular' && cambio < -1) return true;
+    return false;
+  }
+
+  function generarTareasFisicoHoy(){
+    var diaSemana = hoy.getDay();
+    var objetivo = (perfilFisico && perfilFisico.objetivo) ? perfilFisico.objetivo : 'Mantenimiento / tonificacion';
+    var plantilla = generarPlantillaSemanaDinamica(objetivo, perfilFisico && perfilFisico.dias);
+    var tipoHoy = plantilla[diaSemana];
+    var fueraDeObjetivo = progresoEnContra();
+    var bajoImpacto = esBajoImpacto(perfilFisico) || fueraDeObjetivo;
+    var banco = tiposDia[tipoHoy];
+    var lista = (bajoImpacto && banco.bajo) ? banco.bajo : banco.normal;
+    lista = lista.concat([{t:'8000-10000 pasos', s:''}, {t:'Agua: 2-2.5 litros', s:''}]);
+    if(fueraDeObjetivo && objetivo === 'Perdida de peso'){
+      lista = lista.concat([{t:'🔺 Ajuste por progreso: 15 min extra de caminata', s:'Tu peso va en contra de tu objetivo — este bloque se agrego automaticamente'}]);
+    }
+    return lista;
+  }
+
 
   var tareasPorNivel = {
     A1: [
@@ -386,7 +559,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
   function contarPendientes(){
     var listas = [
-      {tareas: tareasFisico, prefijo:'fisico-'},
+      {tareas: generarTareasFisicoHoy(), prefijo:'fisico-'},
       {tareas: tareasPorNivel[nivelActual], prefijo:'ingles-'},
       {tareas: tareasJoyeria, prefijo:'joyeria-'}
     ];
@@ -434,14 +607,369 @@ document.addEventListener('DOMContentLoaded', function(){
     cont.innerHTML = '<b>Tu jefe dice:</b> ' + frase + ' (' + c.hechas + '/' + c.total + ' tareas hoy)';
   }
 
+  var perfilFisico = cargarLS('perfil_fisico', null);
+  var medidasHistorial = cargarLS('medidas_historial', []);
+
+  function evaluarProgresoVsObjetivo(cambioPeso, objetivo){
+    var UMBRAL = 0.3;
+    if(Math.abs(cambioPeso) < UMBRAL) return null;
+
+    if(objetivo === 'Perdida de peso'){
+      if(cambioPeso < 0) return {mensaje:'✅ Vas en la direccion correcta para tu objetivo de perdida de peso.', color:'#eaf3ec'};
+      return {mensaje:'⚠️ Tu peso subio, lo cual va en contra de tu objetivo de perdida de peso. Revisa tu adherencia al plan de calorias y a los dias de cardio.', color:'#fbecec'};
+    }
+    if(objetivo === 'Aumento de masa muscular'){
+      if(cambioPeso > 0) return {mensaje:'✅ Vas en la direccion correcta para ganar masa. Si el aumento es muy rapido (mas de 1kg/semana), podria ser mas grasa que musculo — revisa tu progreso de cintura tambien.', color:'#eaf3ec'};
+      return {mensaje:'⚠️ Tu peso bajo, lo cual va en contra de tu objetivo de ganar masa muscular. Revisa si estas comiendo suficiente (superavit calorico).', color:'#fbecec'};
+    }
+    if(objetivo === 'Mantenimiento / tonificacion'){
+      if(Math.abs(cambioPeso) <= 1.5) return {mensaje:'✅ Tu peso se mantiene estable, alineado con tu objetivo de mantenimiento.', color:'#eaf3ec'};
+      return {mensaje:'⚠️ Tu peso vario mas de lo esperado para un objetivo de mantenimiento. Revisa tu ingesta calorica.', color:'#fdf5e9'};
+    }
+    return null;
+  }
+
+  function pintarMedidas(){
+    var cont = document.getElementById('medidasFisico');
+    var ultimo = medidasHistorial.length ? medidasHistorial[medidasHistorial.length-1] : null;
+    var primero = medidasHistorial.length ? medidasHistorial[0] : null;
+
+    var htmlOut = '<div class="medidas-panel">';
+    htmlOut += '<div class="titulo-med">Toma de medidas de hoy</div>';
+    htmlOut += '<div class="grid3">';
+    htmlOut += '<div class="campo"><label>Peso (kg)</label><input type="number" step="0.1" id="mPeso"></div>';
+    htmlOut += '<div class="campo"><label>Cintura (cm)</label><input type="number" step="0.1" id="mCintura"></div>';
+    htmlOut += '<div class="campo"><label>Cadera (cm)</label><input type="number" step="0.1" id="mCadera"></div>';
+    htmlOut += '</div>';
+    htmlOut += '<div class="grid3">';
+    htmlOut += '<div class="campo"><label>Pecho/torax (cm)</label><input type="number" step="0.1" id="mPecho"></div>';
+    htmlOut += '<div class="campo"><label>Brazo (cm)</label><input type="number" step="0.1" id="mBrazo"></div>';
+    htmlOut += '<div class="campo"><label>Pierna/muslo (cm)</label><input type="number" step="0.1" id="mPierna"></div>';
+    htmlOut += '</div>';
+    htmlOut += '<button class="btn-guardar-intro" id="btnGuardarMedidas">Guardar medidas de hoy</button>';
+
+    if(ultimo){
+      htmlOut += '<div class="medidas-ultimo"><b>Ultimo registro (' + ultimo.fecha + '):</b> ';
+      htmlOut += 'Peso ' + (ultimo.peso||'—') + ' kg · Cintura ' + (ultimo.cintura||'—') + ' cm · Cadera ' + (ultimo.cadera||'—') + ' cm · Pecho ' + (ultimo.pecho||'—') + ' cm · Brazo ' + (ultimo.brazo||'—') + ' cm · Pierna ' + (ultimo.pierna||'—') + ' cm';
+      if(primero && primero !== ultimo && primero.peso && ultimo.peso){
+        var cambioPeso = ultimo.peso - primero.peso;
+        var direccion = cambioPeso > 0 ? 'subiste' : (cambioPeso < 0 ? 'bajaste' : 'te mantuviste');
+        htmlOut += '<br><b>Desde tu primer registro:</b> ' + direccion + ' ' + Math.abs(cambioPeso).toFixed(1) + ' kg';
+        if(primero.cintura && ultimo.cintura){
+          var cambioCintura = ultimo.cintura - primero.cintura;
+          var direccionCintura = cambioCintura > 0 ? 'aumento' : (cambioCintura < 0 ? 'reduccion' : 'sin cambio');
+          htmlOut += ' · Cintura: ' + direccionCintura + ' de ' + Math.abs(cambioCintura).toFixed(1) + ' cm';
+        }
+        var evaluacion = evaluarProgresoVsObjetivo(cambioPeso, perfilFisico ? perfilFisico.objetivo : null);
+        if(evaluacion) htmlOut += '<div style="margin-top:6px; padding:8px; border-radius:3px; background:' + evaluacion.color + ';">' + evaluacion.mensaje + '</div>';
+      }
+      htmlOut += '</div>';
+    }
+    htmlOut += '</div>';
+    cont.innerHTML = htmlOut;
+
+    document.getElementById('btnGuardarMedidas').addEventListener('click', function(){
+      var peso = parseFloat(document.getElementById('mPeso').value);
+      var cintura = parseFloat(document.getElementById('mCintura').value);
+      var cadera = parseFloat(document.getElementById('mCadera').value);
+      var pecho = parseFloat(document.getElementById('mPecho').value);
+      var brazo = parseFloat(document.getElementById('mBrazo').value);
+      var pierna = parseFloat(document.getElementById('mPierna').value);
+      if(!peso && !cintura && !cadera && !pecho && !brazo && !pierna) return;
+      medidasHistorial.push({
+        fecha: hoyKey,
+        peso: peso || null, cintura: cintura || null, cadera: cadera || null,
+        pecho: pecho || null, brazo: brazo || null, pierna: pierna || null
+      });
+      guardarLS('medidas_historial', medidasHistorial);
+      pintarMedidas();
+      pintarIntroFisico(false);
+    });
+  }
+
+
+  function calcularIMC(peso, estaturaCm){
+    var m = estaturaCm / 100;
+    var imc = peso / (m*m);
+    var categoria;
+    if(imc < 18.5) categoria = 'bajo peso';
+    else if(imc < 25) categoria = 'peso saludable';
+    else if(imc < 30) categoria = 'sobrepeso';
+    else categoria = 'obesidad';
+    return {valor: imc.toFixed(1), categoria: categoria};
+  }
+
+  var filosofiaPorObjetivo = {
+    'Perdida de peso': {cardioDias:3, fuerzaDias:3, descanso:1, nota:'Combinamos cardio para generar deficit calorico con fuerza para conservar masa muscular mientras bajas de peso.'},
+    'Aumento de masa muscular': {cardioDias:1, fuerzaDias:5, descanso:1, nota:'Prioridad en sobrecarga progresiva de fuerza. Cardio minimo para no interferir con la recuperacion muscular.'},
+    'Mantenimiento / tonificacion': {cardioDias:2, fuerzaDias:3, descanso:2, nota:'Balance entre fuerza y cardio para mantener tu composicion corporal actual.'},
+    'Mejorar resistencia cardiovascular': {cardioDias:4, fuerzaDias:2, descanso:1, nota:'El cardio es la prioridad; la fuerza se mantiene como apoyo.'},
+    'Aumentar fuerza': {cardioDias:1, fuerzaDias:4, descanso:2, nota:'Cargas mas exigentes, menos repeticiones, mas descanso entre series.'},
+    'Flexibilidad / movilidad': {cardioDias:1, fuerzaDias:1, descanso:2, nota:'Prioridad en estiramientos, movilidad articular y control corporal.'},
+    'Recuperacion de una lesion': {cardioDias:1, fuerzaDias:1, descanso:3, nota:'Movimientos controlados y de bajo impacto. Consulta a un fisioterapeuta antes de iniciar cualquier plan.'}
+  };
+
+  var notaMorfologia = {
+    'Ectomorfo': 'Tu cuerpo tiende a quemar energia rapido — priorizamos series mas cortas de fuerza con buena alimentacion para no perder masa.',
+    'Mesomorfo': 'Respondes bien tanto a fuerza como a cardio — el plan balanceado te funciona sin ajustes extra.',
+    'Endomorfo': 'Tu cuerpo retiene energia con facilidad — el cardio regular es clave junto con la fuerza para mantener el metabolismo activo.',
+    'No estoy seguro': 'Sin dato de morfologia, usamos un plan balanceado estandar.'
+  };
+
+  function generarNotaProfesional(perfil){
+    var filosofia = filosofiaPorObjetivo[perfil.objetivo] || filosofiaPorObjetivo['Mantenimiento / tonificacion'];
+    var notaCuerpo = notaMorfologia[perfil.morfologia] || notaMorfologia['No estoy seguro'];
+    var imc = (perfil.peso && perfil.estatura) ? calcularIMC(perfil.peso, perfil.estatura) : null;
+    var notaImpacto = '';
+    if(imc && (imc.categoria === 'sobrepeso' || imc.categoria === 'obesidad')){
+      notaImpacto = ' Como tu IMC actual sugiere cuidar el impacto en las articulaciones, cambiamos saltos y sprints por versiones de bajo impacto (caminata rapida, step-ups controlados) hasta que ganes base de resistencia.';
+    }
+    return filosofia.nota + ' ' + notaCuerpo + notaImpacto + ' Distribucion semanal: ' + filosofia.fuerzaDias + ' dias de fuerza, ' + filosofia.cardioDias + ' de cardio, ' + filosofia.descanso + ' de descanso.';
+  }
+
+  function obtenerPesoActual(perfil){
+    for(var i = medidasHistorial.length-1; i>=0; i--){
+      if(medidasHistorial[i].peso) return medidasHistorial[i].peso;
+    }
+    return perfil.peso;
+  }
+
+  function obtenerCinturaActual(){
+    for(var i = medidasHistorial.length-1; i>=0; i--){
+      if(medidasHistorial[i].cintura) return medidasHistorial[i].cintura;
+    }
+    return null;
+  }
+
+  function calcularTMB(perfil){
+    var pesoActual = obtenerPesoActual(perfil);
+    var base = 10*pesoActual + 6.25*perfil.estatura - 5*perfil.edad;
+    return perfil.sexo === 'Mujer' ? (base - 161) : (base + 5);
+  }
+
+  function calcularGET(tmb, dias){
+    var factor = 1.2;
+    if(dias >= 6) factor = 1.725;
+    else if(dias >= 4) factor = 1.55;
+    else if(dias >= 1) factor = 1.375;
+    return tmb * factor;
+  }
+
+  function calcularMacros(get, objetivo, peso){
+    var caloriasObjetivo = get;
+    if(objetivo === 'Perdida de peso') caloriasObjetivo = get - 500;
+    else if(objetivo === 'Aumento de masa muscular') caloriasObjetivo = get + 300;
+
+    var gPorKgProteina = (objetivo === 'Aumento de masa muscular' || objetivo === 'Aumentar fuerza') ? 2.2 : 2.0;
+    var proteinaG = Math.round(peso * gPorKgProteina);
+    var proteinaKcal = proteinaG * 4;
+    var grasaKcal = caloriasObjetivo * 0.25;
+    var grasaG = Math.round(grasaKcal / 9);
+    var carbosKcal = caloriasObjetivo - proteinaKcal - grasaKcal;
+    var carbosG = Math.round(carbosKcal / 4);
+
+    return {calorias: Math.round(caloriasObjetivo), proteinaG:proteinaG, grasaG:grasaG, carbosG:Math.max(carbosG,0)};
+  }
+
+  function panelMedico(perfil){
+    var pesoActual = obtenerPesoActual(perfil);
+    var imc = calcularIMC(pesoActual, perfil.estatura);
+    var grasaTexto = perfil.grasa ? perfil.grasa + '%' : 'no indicado — considera medicion con antropometria o bioimpedancia';
+    var examenes = ['Glicemia en ayunas + HbA1c','Perfil lipidico completo (colesterol, LDL, HDL, trigliceridos)','TSH (funcion tiroidea)','Vitamina D y ferritina','Funcion hepatica y renal basica'];
+    var alerta = '';
+    if(imc.categoria === 'obesidad'){ alerta = 'Con IMC en rango de obesidad, la evaluacion medica previa no es opcional — hay valores que pueden cambiar el enfoque nutricional.'; }
+    else if(perfil.edad >= 40){ alerta = 'A partir de los 40 anios se recomienda ademas una evaluacion cardiovascular basica antes de iniciar entrenamiento de intensidad.'; }
+
+    var cintura = obtenerCinturaActual();
+    var riesgoCintura = null;
+    if(cintura && perfil.estatura){
+      var ratio = cintura / perfil.estatura;
+      if(ratio >= 0.6) riesgoCintura = {nivel:'alto', ratio: ratio.toFixed(2)};
+      else if(ratio >= 0.5) riesgoCintura = {nivel:'moderado', ratio: ratio.toFixed(2)};
+      else riesgoCintura = {nivel:'bajo', ratio: ratio.toFixed(2)};
+    }
+    return {imc:imc, grasaTexto:grasaTexto, examenes:examenes, alerta:alerta, riesgoCintura:riesgoCintura, pesoActual:pesoActual};
+  }
+
+  function panelNutricion(perfil){
+    var tmb = calcularTMB(perfil);
+    var get = calcularGET(tmb, perfil.dias || 4);
+    var macros = calcularMacros(get, perfil.objetivo, obtenerPesoActual(perfil));
+    var notaAlergia = (perfil.alergias && perfil.alergias.toLowerCase() !== 'ninguna' && perfil.alergias !== '') ? 'Ajustado considerando: ' + perfil.alergias + '.' : '';
+    return {tmb:Math.round(tmb), get:Math.round(get), macros:macros, notaAlergia:notaAlergia};
+  }
+
+  var splitsPorDias = {
+    3: {nombre:'Full body x3', dias:['Full body A','Full body B','Full body C']},
+    4: {nombre:'Upper/Lower x2', dias:['Tren superior','Tren inferior','Tren superior','Tren inferior']},
+    5: {nombre:'Push/Pull/Legs + Upper/Lower', dias:['Push (empuje)','Pull (jalon)','Piernas','Tren superior','Tren inferior']},
+    6: {nombre:'Push/Pull/Legs x2', dias:['Push','Pull','Piernas','Push','Pull','Piernas']}
+  };
+
+  function panelEntrenador(perfil){
+    var dias = perfil.dias || 4;
+    var split = splitsPorDias[dias] || splitsPorDias[4];
+    var rir = perfil.experiencia === 'Avanzado' ? '1' : (perfil.experiencia === 'Intermedio' ? '2' : '2-3');
+    var seriesBase = perfil.experiencia === 'Avanzado' ? '4-5' : '3-4';
+    return {split:split, rir:rir, series:seriesBase};
+  }
+
+  function panelFisioterapia(perfil){
+    var lesion = (perfil.lesiones || '').toLowerCase();
+    var precauciones = [];
+    if(lesion.indexOf('rodilla') !== -1){ precauciones.push('Rodilla: evita sentadilla profunda al inicio, prioriza rango parcial e isometricos en pared.'); }
+    if(lesion.indexOf('espalda') !== -1 || lesion.indexOf('lumbar') !== -1){ precauciones.push('Espalda baja: evita peso muerto convencional al inicio, usa variantes con apoyo (peso muerto rumano con rango corto) y fortalece core primero.'); }
+    if(lesion.indexOf('hombro') !== -1){ precauciones.push('Hombro: evita press por encima de la cabeza con carga alta al inicio, prioriza movimientos en plano neutro.'); }
+    if(precauciones.length === 0 && lesion !== '' && lesion !== 'ninguna'){ precauciones.push('Modera la intensidad en la zona mencionada y progresa gradualmente.'); }
+    return {precauciones:precauciones, tieneLesion: lesion !== '' && lesion !== 'ninguna'};
+  }
+
+  function esBajoImpacto(perfil){
+    var imc = (perfil && perfil.peso && perfil.estatura) ? calcularIMC(perfil.peso, perfil.estatura) : null;
+    return imc && (imc.categoria === 'sobrepeso' || imc.categoria === 'obesidad');
+  }
+
+  function pintarIntroFisico(modoEdicion){
+
+
+    var cont = document.getElementById('introFisico');
+    if(!perfilFisico || modoEdicion){
+      var d = perfilFisico || {};
+      var htmlOut = '<div class="form-intro">';
+      htmlOut += '<div class="campo"><label>Nombre</label><input type="text" id="fNombre" value="'+(d.nombre||'')+'"></div>';
+      htmlOut += '<div class="fila2">';
+      htmlOut += '<div class="campo"><label>Edad</label><input type="number" id="fEdad" value="'+(d.edad||'')+'"></div>';
+      htmlOut += '<div class="campo"><label>Peso actual (kg)</label><input type="number" step="0.1" id="fPeso" value="'+(d.peso||'')+'"></div>';
+      htmlOut += '</div>';
+      htmlOut += '<div class="fila2">';
+      htmlOut += '<div class="campo"><label>Estatura (cm)</label><input type="number" id="fEstatura" value="'+(d.estatura||'')+'"></div>';
+      htmlOut += '<div class="campo"><label>Tiempo estimado</label><input type="text" id="fTiempo" placeholder="Ej: 7 semanas" value="'+(d.tiempo||'')+'"></div>';
+      htmlOut += '</div>';
+      htmlOut += '<div class="campo"><label>Objetivo</label><select id="fObjetivo">';
+      var objetivos = ['Perdida de peso','Aumento de masa muscular','Mantenimiento / tonificacion','Mejorar resistencia cardiovascular','Aumentar fuerza','Flexibilidad / movilidad','Recuperacion de una lesion'];
+      for(var i=0; i<objetivos.length; i++){
+        var sel = (d.objetivo === objetivos[i]) ? ' selected' : '';
+        htmlOut += '<option value="'+objetivos[i]+'"'+sel+'>'+objetivos[i]+'</option>';
+      }
+      htmlOut += '</select></div>';
+      htmlOut += '<div class="campo"><label>Tipo de cuerpo (morfologia)</label><select id="fMorfologia">';
+      var morfologias = [
+        {v:'Ectomorfo', d:'Ectomorfo - delgado, le cuesta subir de peso/musculo'},
+        {v:'Mesomorfo', d:'Mesomorfo - estructura atletica, gana musculo con facilidad'},
+        {v:'Endomorfo', d:'Endomorfo - estructura mas ancha, tiende a acumular grasa'},
+        {v:'No estoy seguro', d:'No estoy seguro'}
+      ];
+      for(var mi=0; mi<morfologias.length; mi++){
+        var selM = (d.morfologia === morfologias[mi].v) ? ' selected' : '';
+        htmlOut += '<option value="'+morfologias[mi].v+'"'+selM+'>'+morfologias[mi].d+'</option>';
+      }
+      htmlOut += '</select></div>';
+      htmlOut += '<div class="fila2">';
+      htmlOut += '<div class="campo"><label>Sexo</label><select id="fSexo"><option value="Hombre"'+(d.sexo==='Hombre'?' selected':'')+'>Hombre</option><option value="Mujer"'+(d.sexo==='Mujer'?' selected':'')+'>Mujer</option></select></div>';
+      htmlOut += '<div class="campo"><label>% grasa corporal (o vacio si no sabes)</label><input type="number" step="0.1" id="fGrasa" value="'+(d.grasa||'')+'"></div>';
+      htmlOut += '</div>';
+      htmlOut += '<div class="fila2">';
+      htmlOut += '<div class="campo"><label>Nivel de experiencia</label><select id="fExperiencia">';
+      var niveles = ['Principiante','Intermedio','Avanzado'];
+      for(var ne=0; ne<niveles.length; ne++){ htmlOut += '<option value="'+niveles[ne]+'"'+(d.experiencia===niveles[ne]?' selected':'')+'>'+niveles[ne]+'</option>'; }
+      htmlOut += '</select></div>';
+      htmlOut += '<div class="campo"><label>Dias disponibles/semana</label><select id="fDias">';
+      for(var nd=3; nd<=6; nd++){ htmlOut += '<option value="'+nd+'"'+(String(d.dias)===String(nd)?' selected':'')+'>'+nd+' dias</option>'; }
+      htmlOut += '</select></div>';
+      htmlOut += '</div>';
+      htmlOut += '<div class="campo"><label>Lesiones previas o dolores (o "ninguna")</label><input type="text" id="fLesiones" value="'+(d.lesiones||'')+'"></div>';
+      htmlOut += '<div class="campo"><label>Alergias / preferencias alimentarias (o "ninguna")</label><input type="text" id="fAlergias" value="'+(d.alergias||'')+'"></div>';
+      htmlOut += '<button class="btn-guardar-intro" id="btnGuardarIntro">Guardar</button>';
+      htmlOut += '</div>';
+      cont.innerHTML = htmlOut;
+      document.getElementById('btnGuardarIntro').addEventListener('click', function(){
+        var nuevoPeso = parseFloat(document.getElementById('fPeso').value);
+        var nuevaEstatura = parseFloat(document.getElementById('fEstatura').value);
+        perfilFisico = {
+          nombre: document.getElementById('fNombre').value.trim(),
+          edad: document.getElementById('fEdad').value,
+          peso: nuevoPeso,
+          estatura: nuevaEstatura,
+          objetivo: document.getElementById('fObjetivo').value,
+          morfologia: document.getElementById('fMorfologia').value,
+          sexo: document.getElementById('fSexo').value,
+          grasa: parseFloat(document.getElementById('fGrasa').value) || null,
+          experiencia: document.getElementById('fExperiencia').value,
+          dias: parseInt(document.getElementById('fDias').value),
+          lesiones: document.getElementById('fLesiones').value.trim(),
+          alergias: document.getElementById('fAlergias').value.trim(),
+          tiempo: document.getElementById('fTiempo').value.trim()
+        };
+        guardarLS('perfil_fisico', perfilFisico);
+        pintarIntroFisico(false);
+        pintarTodo();
+      });
+    } else {
+      var imc = (perfilFisico.peso && perfilFisico.estatura) ? calcularIMC(perfilFisico.peso, perfilFisico.estatura) : null;
+      var htmlOut2 = '<div class="resumen-fisico">';
+      htmlOut2 += '<b>' + (perfilFisico.nombre || 'Hola') + '</b> — ' + (perfilFisico.edad ? perfilFisico.edad + ' anios, ' : '') + perfilFisico.peso + ' kg, ' + perfilFisico.estatura + ' cm<br>';
+      htmlOut2 += 'Objetivo: <b>' + perfilFisico.objetivo + '</b>' + (perfilFisico.tiempo ? ' en ' + perfilFisico.tiempo : '') + '<br>';
+      if(imc){ htmlOut2 += 'IMC actual: ' + imc.valor + ' (' + imc.categoria + ')<br>'; }
+      htmlOut2 += '<div style="margin-top:8px; padding:8px; background:#fdf8ec; border-radius:3px; font-size:0.8rem; line-height:1.5;"><b>Tu plan profesional:</b> ' + generarNotaProfesional(perfilFisico) + '</div>';
+
+      var med = panelMedico(perfilFisico);
+      htmlOut2 += '<div class="panel-especialista"><div class="titulo-esp">🩺 Medico Deportologo</div><div class="cuerpo-esp">';
+      htmlOut2 += 'Peso usado en calculos: ' + med.pesoActual + ' kg' + (med.pesoActual !== perfilFisico.peso ? ' (actualizado desde tus mediciones)' : '') + '<br>';
+      htmlOut2 += 'IMC: ' + med.imc.valor + ' (' + med.imc.categoria + ') · % grasa: ' + med.grasaTexto + '<br>';
+      if(med.riesgoCintura){
+        htmlOut2 += 'Indice cintura-altura: ' + med.riesgoCintura.ratio + ' (riesgo ' + med.riesgoCintura.nivel + ')<br>';
+      } else {
+        htmlOut2 += '<span style="color:var(--muted);">Registra tu cintura en "Toma de medidas" para calcular el indice cintura-altura (mejor indicador de riesgo que el IMC solo).</span><br>';
+      }
+      if(med.alerta) htmlOut2 += '<b>' + med.alerta + '</b><br>';
+      htmlOut2 += 'Examenes recomendados antes de iniciar:<ul>';
+      for(var e=0; e<med.examenes.length; e++){ htmlOut2 += '<li>' + med.examenes[e] + '</li>'; }
+      htmlOut2 += '</ul></div></div>';
+
+      var nut = panelNutricion(perfilFisico);
+      htmlOut2 += '<div class="panel-especialista"><div class="titulo-esp">🥗 Nutricionista Deportivo</div><div class="cuerpo-esp">';
+      htmlOut2 += 'TMB: ' + nut.tmb + ' kcal · GET: ' + nut.get + ' kcal<br>';
+      htmlOut2 += '<b>Meta diaria: ' + nut.macros.calorias + ' kcal</b>';
+      if(nut.notaAlergia) htmlOut2 += '<br>' + nut.notaAlergia;
+      htmlOut2 += '<table class="macro-tabla"><tr><td>Proteina</td><td>' + nut.macros.proteinaG + ' g</td></tr><tr><td>Grasas</td><td>' + nut.macros.grasaG + ' g</td></tr><tr><td>Carbohidratos</td><td>' + nut.macros.carbosG + ' g</td></tr></table>';
+      htmlOut2 += '</div></div>';
+
+      var ent = panelEntrenador(perfilFisico);
+      htmlOut2 += '<div class="panel-especialista"><div class="titulo-esp">🏋️ Entrenador — Alto Rendimiento</div><div class="cuerpo-esp">';
+      htmlOut2 += 'Split: <b>' + ent.split.nombre + '</b> · Series: ' + ent.series + ' · RIR objetivo: ' + ent.rir + '<br>';
+      htmlOut2 += 'Distribucion: ' + ent.split.dias.join(' → ');
+      htmlOut2 += '</div></div>';
+
+      var fisio = panelFisioterapia(perfilFisico);
+      htmlOut2 += '<div class="panel-especialista"><div class="titulo-esp">🦴 Fisioterapeuta — Biomecanica</div><div class="cuerpo-esp">';
+      htmlOut2 += 'Calentamiento dinamico (8-10 min): movilidad de cadera, tobillo, rotacion toracica, activacion de gluteo.';
+      if(fisio.tieneLesion){
+        htmlOut2 += '<br><b>Precauciones segun tus lesiones/dolores:</b><ul>';
+        for(var p=0; p<fisio.precauciones.length; p++){ htmlOut2 += '<li>' + fisio.precauciones[p] + '</li>'; }
+        htmlOut2 += '</ul>';
+      } else {
+        htmlOut2 += '<br>No reportaste lesiones — mantente atento a cualquier molestia y ajusta la carga si aparece.';
+      }
+      htmlOut2 += '</div></div>';
+
+      htmlOut2 += '<button class="link-editar" id="btnEditarIntro">Editar mis datos</button>';
+      htmlOut2 += '</div>';
+      cont.innerHTML = htmlOut2;
+      document.getElementById('btnEditarIntro').addEventListener('click', function(){ pintarIntroFisico(true); });
+    }
+  }
+
   function pintarTodo(){
     document.getElementById('tituloNivelIngles').textContent = 'Inglés — Nivel ' + nivelActual;
-    pintarChecklist('listaFisico', tareasFisico, 'fisico-');
+    document.getElementById('tituloFisicoHoy').textContent = 'Ejercicio de hoy — ' + nombreTipoDiaHoy();
+    pintarChecklist('listaFisico', generarTareasFisicoHoy(), 'fisico-');
     pintarChecklist('listaIngles', tareasPorNivel[nivelActual], 'ingles-');
     pintarChecklist('listaJoyeria', tareasJoyeria, 'joyeria-');
     pintarTemario();
     pintarMensajeJefe();
   }
+  pintarIntroFisico(false);
+  pintarMedidas();
   pintarTodo();
 
   document.getElementById('btnIniciarExamen').addEventListener('click', iniciarExamen);
