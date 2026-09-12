@@ -99,6 +99,10 @@
 </div>
 <div class="tab-content" id="tab-vida"><div class="placeholder">Aquí irá el contenido de Vida</div></div>
 
+<div style="text-align:center; margin-top:24px;">
+  <button id="btnBorrarTodo" style="background:none; border:1px solid var(--red); color:var(--red); padding:8px 16px; border-radius:3px; font-size:0.76rem; cursor:pointer; font-family:inherit;">Borrar todos los datos (reiniciar app)</button>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function(){
   var hoy = new Date();
@@ -1017,6 +1021,15 @@ document.addEventListener('DOMContentLoaded', function(){
   pintarTodo();
 
   document.getElementById('btnIniciarExamen').addEventListener('click', iniciarExamen);
+
+  document.getElementById('btnBorrarTodo').addEventListener('click', function(){
+    var confirmar = confirm('¿Seguro que quieres borrar TODOS los datos guardados (perfil, medidas, tareas, nivel de ingles)? Esto no se puede deshacer.');
+    if(!confirmar) return;
+    var claves = [];
+    for(var i=0; i<localStorage.length; i++){ claves.push(localStorage.key(i)); }
+    claves.forEach(function(k){ localStorage.removeItem(k); });
+    location.reload();
+  });
 
   var botones = document.querySelectorAll('.tab-btn');
   for(var k=0; k<botones.length; k++){
