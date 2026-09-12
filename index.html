@@ -233,8 +233,8 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 
   function nombreTipoDiaHoy(){
-    var objetivo = (perfilFisico && perfilFisico.objetivo) ? perfilFisico.objetivo : 'Mantenimiento / tonificacion';
-    var plantilla = generarPlantillaSemanaDinamica(objetivo, perfilFisico && perfilFisico.dias);
+    if(!perfilFisico) return 'Completa tu perfil';
+    var plantilla = generarPlantillaSemanaDinamica(perfilFisico.objetivo, perfilFisico.dias);
     return nombresTiposDia[plantilla[hoy.getDay()]];
   }
 
@@ -249,9 +249,12 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 
   function generarTareasFisicoHoy(){
+    if(!perfilFisico || !perfilFisico.objetivo){
+      return [{t:'Completa tu perfil arriba para generar tu plan de ejercicio', s:'Sin nombre/objetivo guardado, no hay plan que mostrar'}];
+    }
     var diaSemana = hoy.getDay();
-    var objetivo = (perfilFisico && perfilFisico.objetivo) ? perfilFisico.objetivo : 'Mantenimiento / tonificacion';
-    var plantilla = generarPlantillaSemanaDinamica(objetivo, perfilFisico && perfilFisico.dias);
+    var objetivo = perfilFisico.objetivo;
+    var plantilla = generarPlantillaSemanaDinamica(objetivo, perfilFisico.dias);
     var tipoHoy = plantilla[diaSemana];
     var fueraDeObjetivo = progresoEnContra();
     var bajoImpacto = esBajoImpacto(perfilFisico) || fueraDeObjetivo;
