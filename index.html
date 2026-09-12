@@ -60,6 +60,20 @@
   .medidas-panel .campo label{font-size:0.7rem; color:var(--muted); display:block; margin-bottom:3px;}
   .medidas-panel .campo input{width:100%; border:1px solid var(--line); border-radius:3px; padding:7px 8px; font-size:0.83rem; font-family:inherit;}
   .medidas-ultimo{font-size:0.76rem; color:var(--muted); margin-top:6px; line-height:1.5;}
+  .subtabs-ejercicio{display:flex; gap:0; border-bottom:1px solid var(--line); margin-bottom:0;}
+  .subtab-btn{flex:1; background:#fdfaf5; border:none; border-bottom:2px solid transparent; padding:8px 4px; font-family:inherit; font-size:0.78rem; color:var(--muted); cursor:pointer;}
+  .subtab-btn.active{color:var(--gold); border-bottom:2px solid var(--gold); font-weight:600; background:white;}
+  .subtab-content{display:none;}
+  .subtab-content.active{display:block;}
+  .dia-semanal{display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid #f0ebe0; font-size:0.86rem;}
+  .dia-semanal:last-child{border-bottom:none;}
+  .dia-semanal.hoy-marcado{background:#fdf8ec;}
+  .dia-semanal .nombre-dia{font-weight:600;}
+  .dia-semanal .zona{font-size:0.76rem; color:var(--muted); display:block; margin-top:2px;}
+  .semana-mensual{padding:12px 14px; border-bottom:1px dashed var(--line);}
+  .semana-mensual:last-child{border-bottom:none;}
+  .semana-mensual b{color:var(--gold); font-size:0.85rem;}
+  .semana-mensual p{margin:4px 0 0; font-size:0.82rem; color:var(--muted); line-height:1.5;}
 </style>
 </head>
 <body>
@@ -78,8 +92,21 @@
 <div class="tab-content active" id="tab-fisico">
   <div id="introFisico"></div>
   <div id="medidasFisico"></div>
-  <div class="bloque-header"><h2 id="tituloFisicoHoy">Ejercicio de hoy — casa/parque</h2></div>
-  <div id="listaFisico"></div>
+  <div class="subtabs-ejercicio">
+    <button class="subtab-btn active" data-subtab="hoy">Hoy</button>
+    <button class="subtab-btn" data-subtab="semanal">Semanal</button>
+    <button class="subtab-btn" data-subtab="mensual">Mensual</button>
+  </div>
+  <div class="subtab-content active" id="subtab-hoy">
+    <div class="bloque-header"><h2 id="tituloFisicoHoy">Ejercicio de hoy — casa/parque</h2></div>
+    <div id="listaFisico"></div>
+  </div>
+  <div class="subtab-content" id="subtab-semanal">
+    <div id="vistaSemanal"></div>
+  </div>
+  <div class="subtab-content" id="subtab-mensual">
+    <div id="vistaMensual"></div>
+  </div>
 </div>
 <div class="tab-content" id="tab-ingles">
   <div class="bloque-header"><h2 id="tituloNivelIngles">Inglés — Nivel A1</h2></div>
@@ -207,6 +234,18 @@ document.addEventListener('DOMContentLoaded', function(){
     descanso_activo:'Descanso activo', descanso:'Descanso', rehab:'Recuperacion / rehabilitacion'
   };
 
+  var zonasPorTipo = {
+    fuerza_fullbody:'Pecho, piernas, core y espalda (cuerpo completo)',
+    fuerza_superior:'Pecho, espalda, brazos y core',
+    fuerza_inferior:'Piernas y gluteos',
+    cardio:'Sistema cardiovascular y piernas',
+    cardio_largo:'Sistema cardiovascular y resistencia general',
+    movilidad:'Articulaciones (cadera, hombros, tobillos) y core',
+    descanso_activo:'Recuperacion activa, sin foco muscular especifico',
+    descanso:'Ninguna — descanso completo',
+    rehab:'Zona especifica segun tu lesion reportada, con movimientos controlados'
+  };
+
   var restDayPatterns = {3:[0,2,4,6], 4:[0,3,5], 5:[0,3], 6:[0]};
 
   function obtenerTiposEntrenoObjetivo(objetivo){
@@ -267,6 +306,48 @@ document.addEventListener('DOMContentLoaded', function(){
     return lista;
   }
 
+  var nombresDiasCorto = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'];
+
+  function pintarVistaSemanal(){
+    var cont = document.getElementById('vistaSemanal');
+    if(!perfilFisico || !perfilFisico.objetivo){
+      cont.innerHTML = '<div class="placeholder">Completa tu perfil para ver tu semana</div>';
+      return;
+    }
+    var plantilla = generarPlantillaSemanaDinamica(perfilFisico.objetivo, perfilFisico.dias);
+    var htmlOut = '<div class="bloque-header"><h2>Tu semana de entrenamiento</h2></div>';
+    for(var d=0; d<7; d++){
+      var tipo = plantilla[d];
+      var esHoy = (d === hoy.getDay());
+      htmlOut += '<div class="dia-semanal' + (esHoy ? ' hoy-marcado' : '') + '">';
+      htmlOut += '<div><span class="nombre-dia">' + nombresDiasCorto[d] + (esHoy ? ' (hoy)' : '') + '</span>';
+      htmlOut += '<span class="zona">' + zonasPorTipo[tipo] + '</span></div>';
+      htmlOut += '<div style="text-align:right; font-size:0.8rem; color:var(--gold);">' + nombresTiposDia[tipo] + '</div>';
+      htmlOut += '</div>';
+    }
+    cont.innerHTML = htmlOut;
+  }
+
+  function pintarVistaMensual(){
+    var cont = document.getElementById('vistaMensual');
+    if(!perfilFisico || !perfilFisico.objetivo){
+      cont.innerHTML = '<div class="placeholder">Completa tu perfil para ver tu progresion mensual</div>';
+      return;
+    }
+    var filosofia = filosofiaPorObjetivo[perfilFisico.objetivo] || filosofiaPorObjetivo['Mantenimiento / tonificacion'];
+    var semanas = [
+      {n:1, titulo:'Adaptacion', detalle:'Enfocate en la tecnica correcta de cada ejercicio, no en la intensidad. Es normal sentir agujetas los primeros dias.'},
+      {n:2, titulo:'Consistencia', detalle:'Mantén el mismo peso/ritmo de la semana 1, pero busca completar todas las series sin cortar por fatiga.'},
+      {n:3, titulo:'Progresion', detalle:'Si completaste todo comodo la semana pasada, aumenta ligeramente la intensidad (mas repeticiones, mas tiempo de cardio, o mas peso).'},
+      {n:4, titulo:'Evaluacion', detalle:'Registra tus medidas de nuevo y comparalas con tu punto de partida. Ajusta el plan segun el resultado (la app lo hace automaticamente si vas en contra del objetivo).'}
+    ];
+    var htmlOut = '<div class="bloque-header"><h2>Progresion del mes</h2></div>';
+    htmlOut += '<div style="padding:10px 14px; font-size:0.8rem; color:var(--muted);">Filosofia para tu objetivo: ' + filosofia.nota + '</div>';
+    for(var s=0; s<semanas.length; s++){
+      htmlOut += '<div class="semana-mensual"><b>Semana ' + semanas[s].n + ' — ' + semanas[s].titulo + '</b><p>' + semanas[s].detalle + '</p></div>';
+    }
+    cont.innerHTML = htmlOut;
+  }
 
   var tareasPorNivel = {
     A1: [
@@ -1018,10 +1099,24 @@ document.addEventListener('DOMContentLoaded', function(){
     pintarChecklist('listaJoyeria', tareasJoyeria, 'joyeria-');
     pintarTemario();
     pintarMensajeJefe();
+    pintarVistaSemanal();
+    pintarVistaMensual();
   }
   pintarIntroFisico(false);
   pintarMedidas();
   pintarTodo();
+
+  var subbotones = document.querySelectorAll('.subtab-btn');
+  for(var sb=0; sb<subbotones.length; sb++){
+    subbotones[sb].addEventListener('click', function(){
+      var todosSub = document.querySelectorAll('.subtab-btn');
+      for(var sm=0; sm<todosSub.length; sm++){ todosSub[sm].classList.remove('active'); }
+      var contSub = document.querySelectorAll('.subtab-content');
+      for(var sn=0; sn<contSub.length; sn++){ contSub[sn].classList.remove('active'); }
+      this.classList.add('active');
+      document.getElementById('subtab-' + this.getAttribute('data-subtab')).classList.add('active');
+    });
+  }
 
   document.getElementById('btnIniciarExamen').addEventListener('click', iniciarExamen);
 
